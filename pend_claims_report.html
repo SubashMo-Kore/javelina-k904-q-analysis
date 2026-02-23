@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>PEND Claims Report — Claims/PEND</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+         background:#f4f6f9; color:#1e293b; padding:24px; }
+  h1 { font-size:1.6rem; margin-bottom:4px; }
+  .meta { color:#64748b; font-size:.85rem; margin-bottom:24px; }
+  .cards { display:flex; gap:16px; margin-bottom:28px; flex-wrap:wrap; }
+  .card { background:#fff; border-radius:10px; padding:20px 28px; min-width:170px;
+           box-shadow:0 1px 3px rgba(0,0,0,.08); }
+  .card .num { font-size:2rem; font-weight:700; }
+  .card .lbl { font-size:.82rem; color:#64748b; margin-top:2px; }
+  .card.blue .num { color:#2563eb; }
+  .card.green .num { color:#16a34a; }
+  .card.red .num { color:#dc2626; }
+  .card.amber .num { color:#d97706; }
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px;
+           overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,.08); margin-bottom:32px; }
+  th { background:#1e293b; color:#fff; text-align:left; padding:10px 14px;
+        font-size:.82rem; text-transform:uppercase; letter-spacing:.04em; }
+  td { padding:9px 14px; font-size:.85rem; border-bottom:1px solid #e2e8f0; }
+  tr:last-child td { border-bottom:none; }
+  tr:hover td { background:#f8fafc; }
+  .badge { display:inline-block; padding:2px 10px; border-radius:9999px;
+            font-size:.76rem; font-weight:600; white-space:nowrap; }
+  .badge.pend { background:#fef3c7; color:#92400e; }
+  .badge.ok { background:#dcfce7; color:#166534; }
+  .badge.err { background:#fee2e2; color:#991b1b; }
+  h2 { font-size:1.15rem; margin:20px 0 10px; }
+  .filter-bar { margin-bottom:14px; display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .filter-bar label { font-size:.85rem; font-weight:600; }
+  .filter-bar select,.filter-bar input {
+      padding:6px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:.85rem; }
+  .pend-tag { background:#fef3c7; color:#92400e; padding:2px 8px; border-radius:6px;
+               font-size:.78rem; font-weight:600; margin:2px 3px 2px 0; display:inline-block; }
+  .reason-tag { background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:6px;
+                 font-size:.78rem; font-weight:600; margin:2px 3px 2px 0; display:inline-block; }
+</style>
+</head>
+<body>
+<h1>PEND Claims Report</h1>
+<p class="meta">Queue: Claims / PEND &nbsp;|&nbsp;
+   Generated: 2026-02-13T13:28:41.283113+00:00 &nbsp;|&nbsp;
+   Transaction: 53222665-0151-448a-8a1d-b28f4840a7b1</p>
+
+<div class="cards">
+  <div class="card blue"><div class="num">42</div><div class="lbl">Total PEND Claims</div></div>
+  <div class="card green"><div class="num">41</div><div class="lbl">Details Fetched</div></div>
+  <div class="card red"><div class="num">1</div><div class="lbl">Fetch Errors</div></div>
+  <div class="card amber"><div class="num">3</div><div class="lbl">Unique Pend Codes</div></div>
+</div>
+
+<h2>Pend Code Distribution</h2>
+<table>
+<thead><tr><th>Pend Code</th><th>Count</th></tr></thead>
+<tbody>
+<tr><td><span class='pend-tag'>BEN — BAD BENEFIT OR CPG CODE</span></td><td>4</td></tr>
+<tr><td><span class='pend-tag'>A00 — OVER USER CLAIM LIMIT</span></td><td>3</td></tr>
+<tr><td><span class='pend-tag'>A36 — TIMELY FILING RECEIVED/SYSTEM DATES</span></td><td>1</td></tr>
+</tbody></table>
+<h2>Reason Code Distribution</h2>
+<table>
+<thead><tr><th>Reason Code</th><th>Count</th></tr></thead>
+<tbody>
+<tr><td><span class='reason-tag'>02 — Allowable charges set by primary network</span></td><td>11</td></tr>
+<tr><td><span class='reason-tag'>03 — AMOUNT EXCEEDS USUAL & CUSTOMARY FEES</span></td><td>6</td></tr>
+<tr><td><span class='reason-tag'>35 — BENEFIT COPAYMENT APPLIED</span></td><td>5</td></tr>
+<tr><td><span class='reason-tag'>01 — PATIENT EXCEEDS PLAN AGE LIMITS</span></td><td>5</td></tr>
+<tr><td><span class='reason-tag'>04 — THIS CLAIM WAS PREVIOUSLY PAID</span></td><td>2</td></tr>
+<tr><td><span class='reason-tag'>D46 — One oral exam allowed every 6 months</span></td><td>1</td></tr>
+<tr><td><span class='reason-tag'>05 — PATIENT NOT ELIGIBLE AT TIME OF SERVICE</span></td><td>1</td></tr>
+<tr><td><span class='reason-tag'>V24 — Vision service allowed once every 24 months</span></td><td>1</td></tr>
+<tr><td><span class='reason-tag'>8C5 — Description goes here</span></td><td>1</td></tr>
+<tr><td><span class='reason-tag'>06 — TIME LIMIT FOR FILING CLAIM HAS EXPIRED</span></td><td>1</td></tr>
+</tbody></table>
+<h2>Claim Details</h2>
+<div class="filter-bar">
+  <label>Search:</label>
+  <input id="searchBox" oninput="applyFilter()" placeholder="claim #, patient, pend code…" style="width:280px"/>
+</div>
+<table id="claimTable">
+<thead><tr>
+  <th>#</th><th>Claim Number</th><th>Patient</th><th>Product</th><th>Client</th>
+  <th>Charge</th><th>Paid</th><th>Received</th><th>Pend Codes</th><th>Reason Codes</th><th>Status</th>
+</tr></thead>
+<tbody>
+<tr><td>1</td><td><strong>214-0000000077-02</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>100.00</td><td>35.00</td><td>2016-11-13</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> <span class='reason-tag' title='BENEFIT COPAYMENT APPLIED'>35</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>2</td><td><strong>215-0000000024-00</strong></td><td>Maria GRIMM1A01</td><td>MM</td><td>MG500</td><td></td><td></td><td></td><td>—</td><td>—</td><td><span class='badge err'>404</span></td></tr>
+<tr><td>3</td><td><strong>215-0000000774-00</strong></td><td>Benny Jett</td><td>MM</td><td>DEN</td><td>400.00</td><td>0.00</td><td>2015-08-06</td><td>—</td><td><span class='reason-tag' title='AMOUNT EXCEEDS USUAL & CUSTOMARY FEES'>03</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>4</td><td><strong>216-0000000026-00</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>200.00</td><td>0.00</td><td>2016-03-03</td><td><span class='pend-tag' title='BAD BENEFIT OR CPG CODE'>BEN</span> <span class='pend-tag' title='BAD BENEFIT OR CPG CODE'>BEN</span> </td><td><span class='reason-tag' title='AMOUNT EXCEEDS USUAL & CUSTOMARY FEES'>03</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>5</td><td><strong>210-0000000003-02</strong></td><td>Ben Garrett</td><td>MM</td><td>A1B</td><td>500.00</td><td>0.00</td><td>2016-03-03</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>6</td><td><strong>216-0000000027-00</strong></td><td>Jennifer Garrett</td><td>DE</td><td>A1M</td><td>225.00</td><td>84.00</td><td>2016-06-13</td><td>—</td><td><span class='reason-tag' title='One oral exam allowed every 6 months'>D46</span> <span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>7</td><td><strong>215-0000000018-02</strong></td><td>Ben Garrett</td><td>DE</td><td>A1M</td><td>200.00</td><td>0.00</td><td>2016-07-27</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>8</td><td><strong>216-0000000062-00</strong></td><td>Edward Sawtelle</td><td>DI</td><td>114</td><td>0.00</td><td>0.00</td><td>2016-01-19</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>9</td><td><strong>216-0000000068-00</strong></td><td>Kathryn Everdeen</td><td>DI</td><td>114</td><td>0.00</td><td>0.00</td><td>2016-10-31</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>10</td><td><strong>216-0000000070-00</strong></td><td>Edward Sawtelle</td><td>DI</td><td>114</td><td>0.00</td><td>0.00</td><td>2016-01-22</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>11</td><td><strong>217-0000000004-00</strong></td><td>Spencer Tracy</td><td>MM</td><td>DEN</td><td>15,000.00</td><td>11,950.00</td><td>2017-02-15</td><td>—</td><td><span class='reason-tag' title='PATIENT NOT ELIGIBLE AT TIME OF SERVICE'>05</span> <span class='reason-tag' title='BENEFIT COPAYMENT APPLIED'>35</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>12</td><td><strong>217-0000000017-00</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>2,000.00</td><td>0.00</td><td>2017-05-15</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>13</td><td><strong>210-0000000268-02</strong></td><td>ELIZABETH CURRY</td><td>MM</td><td>HDC</td><td>100.00</td><td>0.00</td><td>2017-06-19</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>14</td><td><strong>217-0000000140-00</strong></td><td>Tommy Ramsay</td><td>MM</td><td>A1B</td><td>300.00</td><td>0.00</td><td>2017-08-31</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>15</td><td><strong>217-0000000456-00</strong></td><td>Gordon Sumner</td><td>MM</td><td>A1B</td><td>500.00</td><td>350.00</td><td>2017-07-01</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> <span class='reason-tag' title='BENEFIT COPAYMENT APPLIED'>35</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>16</td><td><strong>218-0000000004-00</strong></td><td>Jennifer Garrett</td><td>DE</td><td>A1M</td><td>222.00</td><td>75.60</td><td>2018-02-22</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>17</td><td><strong>216-0000000061-02</strong></td><td>Jennifer Garrett</td><td>DE</td><td>A1M</td><td>100.00</td><td>-45.00</td><td>2018-02-22</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>18</td><td><strong>219-0000000003-00</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>0.00</td><td>0.00</td><td>2019-04-08</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>19</td><td><strong>219-0000000009-01</strong></td><td>John Ellis</td><td>MM</td><td>CSD</td><td>-650.00</td><td>-595.61</td><td>2019-04-24</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>20</td><td><strong>219-0000000009-02</strong></td><td>John Ellis</td><td>MM</td><td>CSD</td><td>650.00</td><td>595.61</td><td>2019-04-24</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>21</td><td><strong>219-0000000030-02</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>185.00</td><td>185.00</td><td>2019-11-08</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>22</td><td><strong>219-0000000033-00</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>150.00</td><td>150.00</td><td>2019-11-08</td><td><span class='pend-tag' title='TIMELY FILING RECEIVED/SYSTEM DATES'>A36</span> </td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>23</td><td><strong>219-0000000041-00</strong></td><td>Violet Garrett</td><td>MM</td><td>A1M</td><td>150,000.00</td><td>0.00</td><td>2019-06-02</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>24</td><td><strong>219-0000000044-00</strong></td><td>Madison Garrett</td><td>MM</td><td>A1M</td><td>175.00</td><td>0.00</td><td>2019-04-16</td><td>—</td><td><span class='reason-tag' title='AMOUNT EXCEEDS USUAL & CUSTOMARY FEES'>03</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>25</td><td><strong>220-0000000002-00</strong></td><td>Jennifer Garrett</td><td>VI</td><td>A1M</td><td>125.00</td><td>0.00</td><td>2020-01-08</td><td>—</td><td><span class='reason-tag' title='Vision service allowed once every 24 months'>V24</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>26</td><td><strong>220-0000000031-00</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>185.00</td><td>148.00</td><td>2020-05-28</td><td><span class='pend-tag' title='OVER USER CLAIM LIMIT'>A00</span> </td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>27</td><td><strong>220-0000000063-00</strong></td><td>Ben Garrett</td><td>MM</td><td>A1M</td><td>14,000.00</td><td>10,500.00</td><td>2019-12-02</td><td>—</td><td><span class='reason-tag' title='PATIENT EXCEEDS PLAN AGE LIMITS'>01</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>28</td><td><strong>220-0000000239-00</strong></td><td>Kathryn Everdeen</td><td>MM</td><td>114</td><td>7,715.32</td><td>3,879.36</td><td>2020-12-03</td><td>—</td><td><span class='reason-tag' title='AMOUNT EXCEEDS USUAL & CUSTOMARY FEES'>03</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>29</td><td><strong>220-0000000240-00</strong></td><td>Sandra Babcock</td><td>MM</td><td>114</td><td>704.00</td><td>0.00</td><td>2020-12-03</td><td>—</td><td><span class='reason-tag' title='AMOUNT EXCEEDS USUAL & CUSTOMARY FEES'>03</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>30</td><td><strong>220-0000000299-00</strong></td><td>Test Test</td><td>MM</td><td>DEMO1</td><td>7,715.32</td><td>0.00</td><td>2020-12-17</td><td>—</td><td><span class='reason-tag' title='THIS CLAIM WAS PREVIOUSLY PAID'>04</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>31</td><td><strong>221-0000000002-00</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>220.00</td><td>0.00</td><td>2021-02-02</td><td><span class='pend-tag' title='BAD BENEFIT OR CPG CODE'>BEN</span> <span class='pend-tag' title='BAD BENEFIT OR CPG CODE'>BEN</span> </td><td><span class='reason-tag' title='BENEFIT COPAYMENT APPLIED'>35</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>32</td><td><strong>214-0000000046-02</strong></td><td>Laverne Mazure</td><td>MM</td><td>MDSUP</td><td>629.00</td><td>0.00</td><td>2011-09-11</td><td>—</td><td><span class='reason-tag' title='THIS CLAIM WAS PREVIOUSLY PAID'>04</span> <span class='reason-tag' title='AMOUNT EXCEEDS USUAL & CUSTOMARY FEES'>03</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>33</td><td><strong>222-0000000107-00</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>110,000.00</td><td>100,000.00</td><td>2021-12-08</td><td><span class='pend-tag' title='OVER USER CLAIM LIMIT'>A00</span> </td><td><span class='reason-tag' title='Description goes here'>8C5</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>34</td><td><strong>224-0000000004-00</strong></td><td>Marshall Diller</td><td>MM</td><td>A1M</td><td>26,500.00</td><td>0.00</td><td>2024-02-20</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>35</td><td><strong>224-0000000096-00</strong></td><td>Freda Neels</td><td>MM</td><td>Demo1</td><td>58.00</td><td>25.20</td><td>2023-09-01</td><td>—</td><td><span class='reason-tag' title='Allowable charges set by primary network'>02</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>36</td><td><strong>220-0000000011-02</strong></td><td>John Doe</td><td>MM</td><td>ABC</td><td>16,000.00</td><td>0.00</td><td>2024-02-28</td><td>—</td><td><span class='reason-tag' title='TIME LIMIT FOR FILING CLAIM HAS EXPIRED'>06</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>37</td><td><strong>224-0000000114-00</strong></td><td>Jennifer Garrett</td><td>MM</td><td>A1M</td><td>250.00</td><td>220.00</td><td>2024-11-04</td><td><span class='pend-tag' title='OVER USER CLAIM LIMIT'>A00</span> </td><td><span class='reason-tag' title='BENEFIT COPAYMENT APPLIED'>35</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>38</td><td><strong>225-0000000007-00</strong></td><td>Cameron Wash</td><td>MM</td><td>Demo1</td><td>300.00</td><td>196.00</td><td>2025-05-01</td><td>—</td><td><span class='reason-tag' title='PATIENT EXCEEDS PLAN AGE LIMITS'>01</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>39</td><td><strong>225-0000000012-00</strong></td><td>Cameron Wash</td><td>MM</td><td>Demo1</td><td>450.00</td><td>0.00</td><td>2025-04-20</td><td>—</td><td>—</td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>40</td><td><strong>225-0000000014-00</strong></td><td>Cameron Wash</td><td>MM</td><td>Demo1</td><td>300.00</td><td>196.00</td><td>2025-06-24</td><td>—</td><td><span class='reason-tag' title='PATIENT EXCEEDS PLAN AGE LIMITS'>01</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>41</td><td><strong>225-0000000015-00</strong></td><td>Cameron Wash</td><td>MM</td><td>Demo1</td><td>300.00</td><td>196.00</td><td>2025-06-24</td><td>—</td><td><span class='reason-tag' title='PATIENT EXCEEDS PLAN AGE LIMITS'>01</span> </td><td><span class='badge ok'>200</span></td></tr>
+<tr><td>42</td><td><strong>225-0000000019-00</strong></td><td>Cameron Wash</td><td>MM</td><td>Demo1</td><td>800.00</td><td>546.00</td><td>2025-06-24</td><td>—</td><td><span class='reason-tag' title='PATIENT EXCEEDS PLAN AGE LIMITS'>01</span> </td><td><span class='badge ok'>200</span></td></tr>
+</tbody></table>
+<script>
+function applyFilter(){
+  const q=document.getElementById('searchBox').value.toLowerCase();
+  document.querySelectorAll('#claimTable tbody tr').forEach(tr=>{
+    tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none';
+  });
+}
+</script>
+</body></html>
