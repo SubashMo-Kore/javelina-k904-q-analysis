@@ -39,6 +39,12 @@
                font-size:.78rem; font-weight:600; margin:2px 3px 2px 0; display:inline-block; }
   .reason-tag { background:#dbeafe; color:#1e40af; padding:2px 8px; border-radius:6px;
                  font-size:.78rem; font-weight:600; margin:2px 3px 2px 0; display:inline-block; }
+  .btn-export { display:inline-flex; align-items:center; gap:6px; padding:8px 18px;
+                background:#1e293b; color:#fff; border:none; border-radius:8px; font-size:.85rem;
+                font-weight:600; cursor:pointer; transition:background .2s; }
+  .btn-export:hover { background:#334155; }
+  .btn-export svg { width:16px; height:16px; fill:currentColor; }
+  .export-bar { display:flex; gap:10px; margin-bottom:20px; }
 </style>
 </head>
 <body>
@@ -52,6 +58,11 @@
   <div class="card green"><div class="num">43</div><div class="lbl">Details Fetched</div></div>
   <div class="card red"><div class="num">1</div><div class="lbl">Fetch Errors</div></div>
   <div class="card amber"><div class="num">3</div><div class="lbl">Unique Pend Codes</div></div>
+</div>
+
+<div class="export-bar">
+  <button class="btn-export" onclick="exportPendCSV()"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.84v4h3.66V9h3.84L12 2z" transform="rotate(180 12 12)"/></svg> Export Claims CSV</button>
+  <button class="btn-export" onclick="exportPendDistCSV()"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.84v4h3.66V9h3.84L12 2z" transform="rotate(180 12 12)"/></svg> Export Pend Code Distribution CSV</button>
 </div>
 
 <h2>Pend Code Distribution</h2>
@@ -139,6 +150,52 @@ function applyFilter(){
   document.querySelectorAll('#claimTable tbody tr').forEach(tr=>{
     tr.style.display=tr.textContent.toLowerCase().includes(q)?'':'none';
   });
+}
+
+function csvEscape(val){
+  val = String(val).replace(/"/g,'""');
+  return /[,"\n\r]/.test(val) ? '"'+val+'"' : val;
+}
+
+function downloadCSV(filename, csvContent){
+  const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function exportPendCSV(){
+  const table = document.getElementById('claimTable');
+  const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+  let csv = headers.map(csvEscape).join(',') + '\n';
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    const cells = Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
+    csv += cells.map(csvEscape).join(',') + '\n';
+  });
+  downloadCSV('pend_claims_report.csv', csv);
+}
+
+function exportPendDistCSV(){
+  let csv = 'Type,Code,Description,Count\n';
+  document.querySelectorAll('table').forEach(table => {
+    const header = table.querySelector('thead th');
+    if(!header) return;
+    const type = header.textContent.trim();
+    if(type !== 'Pend Code' && type !== 'Reason Code') return;
+    table.querySelectorAll('tbody tr').forEach(tr => {
+      const tag = tr.querySelector('.pend-tag,.reason-tag');
+      if(!tag) return;
+      const full = tag.textContent.trim();
+      const parts = full.split(' — ');
+      const code = parts[0] || '';
+      const desc = parts.slice(1).join(' — ') || '';
+      const count = tr.querySelectorAll('td')[1].textContent.trim();
+      csv += [type.replace(' Code',''), code, desc, count].map(csvEscape).join(',') + '\n';
+    });
+  });
+  downloadCSV('pend_code_distribution.csv', csv);
 }
 </script>
 </body></html>
