@@ -34,6 +34,12 @@
   .filter-bar label { font-size: 0.85rem; font-weight: 600; }
   .filter-bar select, .filter-bar input {
       padding: 6px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; }
+  .btn-export { display:inline-flex; align-items:center; gap:6px; padding:8px 18px;
+                background:#1e293b; color:#fff; border:none; border-radius:8px; font-size:.85rem;
+                font-weight:600; cursor:pointer; transition:background .2s; }
+  .btn-export:hover { background:#334155; }
+  .btn-export svg { width:16px; height:16px; fill:currentColor; }
+  .export-bar { display:flex; gap:10px; margin-bottom:20px; }
 </style>
 </head>
 <body>
@@ -46,6 +52,11 @@
   <div class="card green"><div class="num">90</div><div class="lbl">Success (200)</div></div>
   <div class="card red"><div class="num">212</div><div class="lbl">Failed</div></div>
   <div class="card"><div class="num">11</div><div class="lbl">Flows</div></div>
+</div>
+
+<div class="export-bar">
+  <button class="btn-export" onclick="exportFlowSummaryCSV()"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.84v4h3.66V9h3.84L12 2z" transform="rotate(180 12 12)"/></svg> Export Flow Summary CSV</button>
+  <button class="btn-export" onclick="exportDetailCSV()"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.84v4h3.66V9h3.84L12 2z" transform="rotate(180 12 12)"/></svg> Export Queue Details CSV</button>
 </div>
 
 <h2>Flow Summary</h2>
@@ -411,6 +422,49 @@ function applyFilters() {
     const matchSearch = !search || tr.children[2].textContent.toLowerCase().includes(search);
     tr.style.display = (matchFlow && matchStatus && matchSearch) ? '' : 'none';
   });
+}
+
+function csvEscape(val){
+  val = String(val).replace(/"/g,'""');
+  return /[,"\n\r]/.test(val) ? '"'+val+'"' : val;
+}
+
+function downloadCSV(filename, csvContent){
+  const blob = new Blob([csvContent], {type:'text/csv;charset=utf-8;'});
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = filename;
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+function exportFlowSummaryCSV(){
+  const tables = document.querySelectorAll('table');
+  let summaryTable = null;
+  tables.forEach(t => {
+    const th = t.querySelector('thead th');
+    if(th && th.textContent.trim() === 'Flow') summaryTable = t;
+  });
+  if(!summaryTable) return;
+  const headers = Array.from(summaryTable.querySelectorAll('thead th')).map(th => th.textContent.trim());
+  let csv = headers.map(csvEscape).join(',') + '\n';
+  summaryTable.querySelectorAll('tbody tr').forEach(tr => {
+    const cells = Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
+    csv += cells.map(csvEscape).join(',') + '\n';
+  });
+  downloadCSV('workflow_flow_summary.csv', csv);
+}
+
+function exportDetailCSV(){
+  const table = document.getElementById('detailTable');
+  if(!table) return;
+  const headers = Array.from(table.querySelectorAll('thead th')).map(th => th.textContent.trim());
+  let csv = headers.map(csvEscape).join(',') + '\n';
+  table.querySelectorAll('tbody tr').forEach(tr => {
+    const cells = Array.from(tr.querySelectorAll('td')).map(td => td.textContent.trim());
+    csv += cells.map(csvEscape).join(',') + '\n';
+  });
+  downloadCSV('workflow_queue_details.csv', csv);
 }
 </script>
 </body></html>
