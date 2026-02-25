@@ -224,13 +224,28 @@ const FLAGGED_CLAIM_IDS=[
   '226-0000000016-00'
 ];
 
+// Build lookup map for direct claim reads (claims not in any queue)
+const directLookup={};
+(DATA.flagged_claim_lookups||[]).forEach(l=>{ directLookup[l.claim_number]=l; });
+
 function findClaimInData(cn){
   for(const f of DATA.flows){
     for(const q of f.queues){
       for(const w of q.work_items){
-        if(w.claim_number===cn) return {flow:f.name,queue:q.name,wi:w};
+        if(w.claim_number===cn) return {flow:f.name,queue:q.name,wi:w,source:'queue'};
       }
     }
+  }
+  if(directLookup[cn] && directLookup[cn].claim_detail){
+    return {flow:'—',queue:'Not in any queue',wi:{
+      claim_number:cn,
+      claim_detail:directLookup[cn].claim_detail,
+      pend_codes:directLookup[cn].pend_codes||[],
+      reason_codes:directLookup[cn].reason_codes||[],
+      patient:directLookup[cn].claim_detail.patient||'',
+      product:directLookup[cn].claim_detail.product||'',
+      provider:'',facility:'',age:'',work_item_id:'—'
+    },source:'direct'};
   }
   return null;
 }
@@ -240,19 +255,21 @@ function buildFlaggedClaims(){
     const found=findClaimInData(cn);
     return {cn,found};
   });
-  const inData=results.filter(r=>r.found);
+  const inQueue=results.filter(r=>r.found&&r.found.source==='queue');
+  const direct=results.filter(r=>r.found&&r.found.source==='direct');
   const missing=results.filter(r=>!r.found);
 
   let h='<div class="cards" style="margin-bottom:18px">'+
     '<div class="card blue"><div class="n">'+FLAGGED_CLAIM_IDS.length+'</div><div class="l">Flagged Claims</div></div>'+
-    '<div class="card green"><div class="n">'+inData.length+'</div><div class="l">Found in Queues</div></div>'+
-    '<div class="card red"><div class="n">'+missing.length+'</div><div class="l">Not in Queues</div></div>'+
+    '<div class="card green"><div class="n">'+inQueue.length+'</div><div class="l">In Work Queues</div></div>'+
+    '<div class="card amber"><div class="n">'+direct.length+'</div><div class="l">Processed (Direct Lookup)</div></div>'+
+    '<div class="card red"><div class="n">'+missing.length+'</div><div class="l">Lookup Failed</div></div>'+
     '</div>';
 
   h+='<div class="bar"><label>Search:</label><input id="fcSearch" oninput="filterFC()" placeholder="claim #, patient, queue…" style="width:260px"/>'+
     '<button class="btn" onclick="exportFlaggedCSV()"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.84v4h3.66V9h3.84L12 2z" transform="rotate(180 12 12)"/></svg> Export CSV</button></div>';
 
-  h+='<table id="fcTable"><thead><tr><th>#</th><th>Claim #</th><th>Status</th><th>Flow</th><th>Queue</th><th>Patient</th><th>Product</th><th>Provider</th><th>Facility</th><th>Age</th><th>Charge</th><th>Paid</th><th>Pend Codes</th><th>Reason Codes</th></tr></thead><tbody>';
+  h+='<table id="fcTable"><thead><tr><th>#</th><th>Claim #</th><th>Status</th><th>Source</th><th>Flow / Queue</th><th>Patient</th><th>Product</th><th>Charge</th><th>Paid</th><th>Pend Codes</th><th>Reason Codes</th></tr></thead><tbody>';
 
   results.forEach((r,i)=>{
     if(r.found){
@@ -262,9 +279,11 @@ function buildFlaggedClaims(){
       const tagHtml=pendTags.map(t=>' <span class="hl-badge">'+esc(t)+'</span>').join('');
       const pc=(w.pend_codes||[]).map(p=>'<span class="pend-tag" title="'+esc(p.desc)+'">'+esc(p.code)+'</span>').join(' ')||'—';
       const rc=(w.reason_codes||[]).map(r=>'<span class="reason-tag" title="'+esc(r.desc)+'">'+esc(r.code)+'</span>').join(' ')||'—';
-      h+='<tr'+(pendTags.length?' class="hl"':'')+'><td>'+(i+1)+'</td><td><strong>'+esc(r.cn)+'</strong>'+tagHtml+'</td><td><span class="badge '+(cd.status==='PEND'?'pend':'ok')+'">'+esc(cd.status||'?')+'</span></td><td>'+esc(r.found.flow)+'</td><td>'+esc(r.found.queue)+'</td><td>'+esc(w.patient)+'</td><td>'+esc(w.product)+'</td><td>'+esc(w.provider)+'</td><td>'+esc(w.facility)+'</td><td>'+esc(w.age)+'</td><td>'+esc(cd.charge||'')+'</td><td>'+esc(cd.paid||'')+'</td><td>'+pc+'</td><td>'+rc+'</td></tr>';
+      const srcBadge=r.found.source==='queue'?'<span class="badge ok">Queue</span>':'<span class="badge info">Direct Lookup</span>';
+      const flowQ=r.found.source==='queue'?esc(r.found.flow)+' / '+esc(r.found.queue):esc(r.found.queue);
+      h+='<tr'+(pendTags.length?' class="hl"':'')+'><td>'+(i+1)+'</td><td><strong>'+esc(r.cn)+'</strong>'+tagHtml+'</td><td><span class="badge '+(cd.status==='PEND'?'pend':cd.status==='PAY'?'ok':'info')+'">'+esc(cd.status||'?')+'</span></td><td>'+srcBadge+'</td><td>'+flowQ+'</td><td>'+esc(w.patient)+'</td><td>'+esc(w.product)+'</td><td>'+esc(cd.charge||'')+'</td><td>'+esc(cd.paid||'')+'</td><td>'+pc+'</td><td>'+rc+'</td></tr>';
     } else {
-      h+='<tr style="opacity:.55"><td>'+(i+1)+'</td><td><strong>'+esc(r.cn)+'</strong></td><td><span class="badge fail">NOT FOUND</span></td><td colspan="11" style="color:#94a3b8;font-style:italic">Claim not present in any work queue — may have been processed (PAY) or removed</td></tr>';
+      h+='<tr style="opacity:.55"><td>'+(i+1)+'</td><td><strong>'+esc(r.cn)+'</strong></td><td><span class="badge fail">ERROR</span></td><td colspan="8" style="color:#94a3b8;font-style:italic">Could not retrieve claim details</td></tr>';
     }
   });
   h+='</tbody></table>';
@@ -279,14 +298,15 @@ function filterFC(){
 }
 
 function exportFlaggedCSV(){
-  let csv='#,Claim #,Status,Flow,Queue,Patient,Product,Provider,Facility,Age,Charge,Paid,Pend Codes,Reason Codes\n';
+  let csv='#,Claim #,Status,Source,Flow/Queue,Patient,Product,Charge,Paid,Pend Codes,Reason Codes\n';
   FLAGGED_CLAIM_IDS.forEach((cn,i)=>{
     const found=findClaimInData(cn);
     if(found){
       const w=found.wi;const cd=w.claim_detail||{};
-      csv+=[i+1,cn,cd.status||'',found.flow,found.queue,w.patient,w.product,w.provider,w.facility,w.age,cd.charge||'',cd.paid||'',(w.pend_codes||[]).map(p=>p.code).join('; '),(w.reason_codes||[]).map(r=>r.code+' - '+r.desc).join('; ')].map(csvEsc).join(',')+'\n';
+      const fq=found.source==='queue'?found.flow+'/'+found.queue:found.queue;
+      csv+=[i+1,cn,cd.status||'',found.source,fq,w.patient,w.product,cd.charge||'',cd.paid||'',(w.pend_codes||[]).map(p=>p.code).join('; '),(w.reason_codes||[]).map(r=>r.code+' - '+r.desc).join('; ')].map(csvEsc).join(',')+'\n';
     } else {
-      csv+=[i+1,cn,'NOT FOUND','','','','','','','','','','',''].map(csvEsc).join(',')+'\n';
+      csv+=[i+1,cn,'ERROR','','','','','','','',''].map(csvEsc).join(',')+'\n';
     }
   });
   downloadCSV('k904_flagged_claims.csv',csv);
