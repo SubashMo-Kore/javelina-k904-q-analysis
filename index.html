@@ -39,6 +39,16 @@ a.wi-link{color:#2563eb;text-decoration:none;font-weight:600}a.wi-link:hover{tex
 #detailView{display:none}
 .progress-bar{height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden;margin-bottom:8px}
 .progress-bar .fill{height:100%;background:#2563eb;border-radius:2px;transition:width .3s}
+tr.hl td{background:#fefce8 !important;border-left:3px solid #eab308}
+tr.hl:hover td{background:#fef9c3 !important}
+tr.hl-queue td{background:#eff6ff !important;border-left:3px solid #3b82f6}
+tr.hl-queue:hover td{background:#dbeafe !important}
+.hl-badge{display:inline-block;padding:1px 8px;border-radius:5px;font-size:.72rem;font-weight:700;background:#fef08a;color:#854d0e;margin-left:6px}
+.hl-legend{display:flex;gap:18px;align-items:center;margin-bottom:14px;font-size:.82rem;flex-wrap:wrap}
+.hl-legend span{display:inline-flex;align-items:center;gap:5px}
+.hl-legend .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+.dot.yellow{background:#fef08a;border:1px solid #eab308}
+.dot.blue{background:#dbeafe;border:1px solid #3b82f6}
 </style>
 </head>
 <body>
@@ -72,6 +82,29 @@ function downloadCSV(name,csv){
   const b=new Blob([csv],{type:'text/csv;charset=utf-8;'});
   const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();URL.revokeObjectURL(a.href);
 }
+
+// ── Highlighted claims (from screenshots) ──
+const HL_CLAIMS=new Set([
+  '226-0000000001-00','226-0000000002-00','226-0000000003-00',
+  '226-0000000004-00','226-0000000005-00','226-0000000006-00',
+  '226-0000000007-00','226-0000000008-00','226-0000000009-00',
+  '226-0000000010-00','226-0000000011-00','226-0000000012-00',
+  '226-0000000013-00','226-0000000014-00','226-0000000015-00',
+  '226-0000000016-00'
+]);
+const HL_NOTES={
+  '226-0000000002-00':'Pended for A40',
+  '226-0000000003-00':'Pended for A32'
+};
+// Pre-compute which queues contain highlighted claims
+const HL_QUEUES=new Set();
+DATA.flows.forEach(f=>{
+  f.queues.forEach(q=>{
+    q.work_items.forEach(w=>{
+      if(HL_CLAIMS.has(w.claim_number)) HL_QUEUES.add(f.name+'|||'+q.name);
+    });
+  });
+});
 
 // ── Compute stats ──
 let totalQueues=0, successQueues=0, failedQueues=0, totalWorkItems=0;
@@ -140,6 +173,7 @@ function buildQueueDetails(){
     '<label>Search:</label><input id="qSearch" oninput="filterQueues()" placeholder="queue name…" style="width:220px"/>'+
     '</div>';
 
+  h+='<div class="hl-legend"><span><span class="dot blue"></span> Queue contains flagged claims</span><span><span class="dot yellow"></span> Flagged claim row</span></div>';
   h+='<table id="queueTable"><thead><tr><th>#</th><th>Flow</th><th>Queue</th><th>Type</th><th>Status</th><th>Work Items</th><th>Details</th></tr></thead><tbody>';
   let idx=0;
   DATA.flows.forEach(f=>{
@@ -154,7 +188,10 @@ function buildQueueDetails(){
         wiCell='0';
       }
       const detail=q.error?esc(q.error):'';
-      h+='<tr data-flow="'+esc(f.name)+'" data-status="'+(ok?'ok':'fail')+'"><td>'+idx+'</td><td>'+esc(f.name)+'</td><td><strong>'+esc(q.name)+'</strong></td><td>'+esc(q.queue_type)+'</td><td>'+badge+'</td><td>'+wiCell+'</td><td>'+detail+'</td></tr>';
+      const isHlQ=HL_QUEUES.has(f.name+'|||'+q.name);
+      const hlCount=isHlQ?q.work_items.filter(w=>HL_CLAIMS.has(w.claim_number)).length:0;
+      const hlBadge=hlCount?'<span class="hl-badge">'+hlCount+' flagged</span>':'';
+      h+='<tr data-flow="'+esc(f.name)+'" data-status="'+(ok?'ok':'fail')+'"'+(isHlQ?' class="hl-queue"':'')+'><td>'+idx+'</td><td>'+esc(f.name)+'</td><td><strong>'+esc(q.name)+'</strong>'+hlBadge+'</td><td>'+esc(q.queue_type)+'</td><td>'+badge+'</td><td>'+wiCell+'</td><td>'+detail+'</td></tr>';
     });
   });
   h+='</tbody></table>';
@@ -194,12 +231,24 @@ function showWorkItems(flowName,queueName){
     '<button class="btn" onclick="exportWorkItemsCSV()"><svg viewBox="0 0 24 24"><path d="M5 20h14v-2H5v2zm7-18L5.33 9h3.84v4h3.66V9h3.84L12 2z" transform="rotate(180 12 12)"/></svg> Export CSV</button>'+
     '<label>Search:</label><input id="wiSearch" oninput="filterWI()" placeholder="claim #, patient…" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:6px;font-size:.82rem;width:240px"/>';
 
-  let h='<table id="wiTable"><thead><tr><th>#</th><th>Work Item ID</th><th>Claim #</th><th>Patient</th><th>Product</th><th>Provider</th><th>Facility</th><th>Age (days)</th>';
+  let h='';
+  const hlInQueue=queue.work_items.filter(w=>HL_CLAIMS.has(w.claim_number)).length;
+  if(hlInQueue){
+    h+='<div class="hl-legend"><span><span class="dot yellow"></span> Flagged claim ('+hlInQueue+' of '+queue.work_items.length+')</span>';
+    const noted=queue.work_items.filter(w=>HL_NOTES[w.claim_number]);
+    if(noted.length) h+=noted.map(w=>'<span><strong>'+esc(w.claim_number)+'</strong>: '+esc(HL_NOTES[w.claim_number])+'</span>').join('');
+    h+='</div>';
+  }
+
+  h+='<table id="wiTable"><thead><tr><th>#</th><th>Work Item ID</th><th>Claim #</th><th>Patient</th><th>Product</th><th>Provider</th><th>Facility</th><th>Age (days)</th>';
   if(hasClaims) h+='<th>Charge</th><th>Paid</th><th>Pend Codes</th><th>Reason Codes</th>';
   h+='</tr></thead><tbody>';
 
   queue.work_items.forEach((w,i)=>{
-    h+='<tr><td>'+(i+1)+'</td><td>'+esc(w.work_item_id)+'</td><td><strong>'+esc(w.claim_number)+'</strong></td><td>'+esc(w.patient)+'</td><td>'+esc(w.product)+'</td><td>'+esc(w.provider)+'</td><td>'+esc(w.facility)+'</td><td>'+esc(w.age)+'</td>';
+    const isHl=HL_CLAIMS.has(w.claim_number);
+    const note=HL_NOTES[w.claim_number];
+    const claimLabel=esc(w.claim_number)+(note?' <span class="hl-badge">'+esc(note)+'</span>':'');
+    h+='<tr'+(isHl?' class="hl"':'')+'><td>'+(i+1)+'</td><td>'+esc(w.work_item_id)+'</td><td><strong>'+claimLabel+'</strong></td><td>'+esc(w.patient)+'</td><td>'+esc(w.product)+'</td><td>'+esc(w.provider)+'</td><td>'+esc(w.facility)+'</td><td>'+esc(w.age)+'</td>';
     if(hasClaims){
       const cd=w.claim_detail||{};
       h+='<td>'+esc(cd.charge||'')+'</td><td>'+esc(cd.paid||'')+'</td>';
