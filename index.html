@@ -92,10 +92,14 @@ const HL_CLAIMS=new Set([
   '226-0000000013-00','226-0000000014-00','226-0000000015-00',
   '226-0000000016-00'
 ]);
-const HL_NOTES={
-  '226-0000000002-00':'Pended for A40',
-  '226-0000000003-00':'Pended for A32'
-};
+function getPendTags(w){
+  const tags=[];
+  const all=[...(w.pend_codes||[]).map(p=>p.code+' '+p.desc),...(w.reason_codes||[]).map(r=>r.code+' '+r.desc)];
+  const joined=all.join(' ');
+  if(/A40/i.test(joined)) tags.push('Pended for A40');
+  if(/A32/i.test(joined)) tags.push('Pended for A32');
+  return tags;
+}
 // Pre-compute which queues contain highlighted claims
 const HL_QUEUES=new Set();
 DATA.flows.forEach(f=>{
@@ -235,8 +239,8 @@ function showWorkItems(flowName,queueName){
   const hlInQueue=queue.work_items.filter(w=>HL_CLAIMS.has(w.claim_number)).length;
   if(hlInQueue){
     h+='<div class="hl-legend"><span><span class="dot yellow"></span> Flagged claim ('+hlInQueue+' of '+queue.work_items.length+')</span>';
-    const noted=queue.work_items.filter(w=>HL_NOTES[w.claim_number]);
-    if(noted.length) h+=noted.map(w=>'<span><strong>'+esc(w.claim_number)+'</strong>: '+esc(HL_NOTES[w.claim_number])+'</span>').join('');
+    const noted=queue.work_items.filter(w=>getPendTags(w).length>0);
+    if(noted.length) h+=noted.map(w=>'<span><strong>'+esc(w.claim_number)+'</strong>: '+getPendTags(w).map(esc).join(', ')+'</span>').join('');
     h+='</div>';
   }
 
@@ -246,8 +250,9 @@ function showWorkItems(flowName,queueName){
 
   queue.work_items.forEach((w,i)=>{
     const isHl=HL_CLAIMS.has(w.claim_number);
-    const note=HL_NOTES[w.claim_number];
-    const claimLabel=esc(w.claim_number)+(note?' <span class="hl-badge">'+esc(note)+'</span>':'');
+    const pendTags=getPendTags(w);
+    const tagHtml=pendTags.map(t=>' <span class="hl-badge">'+esc(t)+'</span>').join('');
+    const claimLabel=esc(w.claim_number)+tagHtml;
     h+='<tr'+(isHl?' class="hl"':'')+'><td>'+(i+1)+'</td><td>'+esc(w.work_item_id)+'</td><td><strong>'+claimLabel+'</strong></td><td>'+esc(w.patient)+'</td><td>'+esc(w.product)+'</td><td>'+esc(w.provider)+'</td><td>'+esc(w.facility)+'</td><td>'+esc(w.age)+'</td>';
     if(hasClaims){
       const cd=w.claim_detail||{};
